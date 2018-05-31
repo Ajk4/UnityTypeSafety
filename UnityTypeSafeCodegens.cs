@@ -57,7 +57,7 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
         writer.WriteLine("using System.Linq;");
         writer.WriteLine("using System;");
         writer.WriteLine("");
-        writer.WriteLine("namespace UnityTypeSafe {");
+        writer.WriteLine("namespace UnityTypeSafety {");
 
         writer.WriteLine("\tpublic enum Scenes {");
         // TODO Not available scene names here. Only in runtime? Have only build index here?
@@ -149,7 +149,7 @@ class UnityTypeSafeCodegens {
                     writer.WriteLine("using UnityEngine;");
                     writer.WriteLine("using System.Linq;");
                     writer.WriteLine("");
-                    writer.WriteLine("namespace UnityTypeSafe {");
+                    writer.WriteLine("namespace UnityTypeSafety {");
                     writer.WriteLine("\tpublic static class SortingLayers {");
 
                     foreach (var layer in currentSortingLayerNames) {
@@ -172,7 +172,7 @@ class UnityTypeSafeCodegens {
                 GenerateFile(LAYERS_FILE, writer => {
                     writer.WriteLine("using UnityEngine;");
                     writer.WriteLine("");
-                    writer.WriteLine("namespace UnityTypeSafe {");
+                    writer.WriteLine("namespace UnityTypeSafety {");
                     writer.WriteLine("\tpublic static class Layers {");
 
                     foreach (var layer in currentLayersNames) {
@@ -197,7 +197,7 @@ class UnityTypeSafeCodegens {
                 GenerateFile(TAGS_FILE, writer => {
                     writer.WriteLine("using UnityEngine;");
                     writer.WriteLine("");
-                    writer.WriteLine("namespace UnityTypeSafe {");
+                    writer.WriteLine("namespace UnityTypeSafety {");
                     writer.WriteLine("\tpublic static class Tags {");
 
                     foreach (var layer in currentTags) {
@@ -221,7 +221,7 @@ class UnityTypeSafeCodegens {
                 GenerateFile(INPUTS_FILE, writer => {
                     writer.WriteLine("using UnityEngine;");
                     writer.WriteLine("");
-                    writer.WriteLine("namespace UnityTypeSafe {");
+                    writer.WriteLine("namespace UnityTypeSafety {");
                     writer.WriteLine("\tpublic static class Inputs {");
 
                     foreach (var input in current) {
