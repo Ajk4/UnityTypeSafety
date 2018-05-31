@@ -1,0 +1,269 @@
+﻿#if UNITY_EDITOR
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+using UnityEngine;
+using UnityTypeSafe;
+
+using UnityEditor;
+using UnityEditorInternal;
+
+abstract class UnityTypeSafeCodegen<T> {
+    protected abstract string Filename { get; }
+    protected abstract HashSet<T> GetCurrentList();
+    private HashSet<T> previous = null;
+    protected abstract void WriteFile(StreamWriter writer, HashSet<T> list);
+
+    public void ForceRefresh() {
+        previous = null;
+        Update();
+    }
+
+    public void Update() {
+        var current = GetCurrentList();
+        if (previous == null || !previous.SetEquals(current)) {
+            var fullPath = "Assets/UnityTypeSafety/" + Filename + ".cs";
+
+            Debug.Log(string.Format("Regenerating {0} file...", fullPath));
+            File.Delete(fullPath);
+
+            Directory.CreateDirectory("Assets/UnityTypeSafety");
+            var writer = File.CreateText(fullPath);
+
+            WriteFile(writer, current);
+
+            writer.Close();
+        }
+        previous = current;
+    }
+}
+
+// TODO Refactor other codegens
+class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
+    protected override string Filename {
+        get { return "Scenes"; }
+    }
+
+    protected override HashSet<string> GetCurrentList() {
+        return new HashSet<string>(EditorBuildSettings.scenes.Select(scene => scene.path));
+    }
+
+    // TODO Uzyc enuma, by property dzialalo!
+    protected override void WriteFile(StreamWriter writer, HashSet<string> list) {
+        writer.WriteLine("using UnityEngine;");
+        writer.WriteLine("using System.Linq;");
+        writer.WriteLine("using System;");
+        writer.WriteLine("");
+        writer.WriteLine("namespace UnityTypeSafe {");
+
+        writer.WriteLine("\tpublic enum Scenes {");
+        // TODO Not available scene names here. Only in runtime? Have only build index here?
+        foreach (var path in list) {
+            // This should be in getter?
+            var sceneName = Path.GetFileNameWithoutExtension(path);
+            // TODO Proper escaping
+            // TODO DRY escaping
+            var escapedName = sceneName.Replace(" ", "_").ToUpper();
+            // public static Scene DEFAULT = new Scene("default");
+            writer.WriteLine("\t\t " + escapedName + ",");
+        }
+        writer.WriteLine("\t}");
+
+        writer.WriteLine("\tpublic static class ScenesExtension {");
+        writer.WriteLine("");
+        writer.WriteLine("\t\tpublic static string Name(this Scenes scene) {");
+        writer.WriteLine("\t\t\tswitch(scene){");
+
+        foreach (var path in list) {
+            // This should be in getter?
+            var sceneName = Path.GetFileNameWithoutExtension(path);
+            // TODO Proper escaping
+            // TODO DRY escaping
+            var escapedName = sceneName.Replace(" ", "_").ToUpper();
+            writer.WriteLine("\t\t\t\tcase Scenes." + escapedName + ":");
+            writer.WriteLine("\t\t\t\t\treturn \"" + sceneName + "\";");
+        }
+        writer.WriteLine("\t\t\t\tdefault:");
+        writer.WriteLine("\t\t\t\t\tthrow new Exception(\"Uknown \" + scene);");
+
+        writer.WriteLine("\t\t\t}");
+        writer.WriteLine("\t\t}");
+        writer.WriteLine("\t}");
+
+        writer.WriteLine("}");
+    }
+}
+
+[InitializeOnLoad]
+class UnityTypeSafeCodegens {
+    // IDEAS:
+    // Annotation 'prefab'
+
+    private const String SORTING_LAYER_ENUM_FILE = "Assets/UnityTypeSafety/SortingLayers.cs";
+    private const String LAYERS_FILE = "Assets/UnityTypeSafety/Layers.cs";
+    private const String TAGS_FILE = "Assets/UnityTypeSafety/Tags.cs";
+    private const String INPUTS_FILE = "Assets/UnityTypeSafety/Inputs.cs";
+
+    private static HashSet<SortingLayer> PreviousSortingLayerNames = null;
+    private static HashSet<String> PreviousLayersNames = null;
+    private static HashSet<String> PreviousTags = null;
+    private static HashSet<String> PreviousInputs = null;
+
+    private static readonly ScenesUnityTypeSafeCodegen ScenesCodegen = new ScenesUnityTypeSafeCodegen();
+
+    static UnityTypeSafeCodegens() {
+        EditorApplication.update += Update;
+        Update();
+    }
+
+    [MenuItem("Tools/UnityTypeSafe/Force refresh")]
+    static void ForceRefresh() {
+        File.Delete(SORTING_LAYER_ENUM_FILE);
+        PreviousSortingLayerNames = null;
+        File.Delete(LAYERS_FILE);
+        PreviousLayersNames = null;
+        File.Delete(TAGS_FILE);
+        PreviousLayersNames = null;
+        File.Delete(INPUTS_FILE);
+        PreviousInputs = null;
+        Update();
+        ScenesCodegen.ForceRefresh();
+    }
+
+    /*
+    [MenuItem("Tools/UnityTypeSafe/Test")]
+    static void TestScene() {
+        ScenesCodegen.Update();
+    }
+    */
+
+    static void Update() {
+        ScenesCodegen.Update();
+        {
+            var currentSortingLayerNames = GetSortingLayerNames();
+            if (PreviousSortingLayerNames == null || !currentSortingLayerNames.SetEquals(PreviousSortingLayerNames)) {
+                GenerateFile(SORTING_LAYER_ENUM_FILE, writer => {
+                    writer.WriteLine("using UnityEngine;");
+                    writer.WriteLine("using System.Linq;");
+                    writer.WriteLine("");
+                    writer.WriteLine("namespace UnityTypeSafe {");
+                    writer.WriteLine("\tpublic static class SortingLayers {");
+
+                    foreach (var layer in currentSortingLayerNames) {
+                        // TODO Proper escaping
+                        // TODO DRY escaping
+                        var escapedName = layer.name.Replace(" ", "_").ToUpper();
+                        writer.WriteLine("\t\t public static SortingLayer " + escapedName +
+                                         " = SortingLayer.layers.First(l => l.name == \"" + layer.name + "\");");
+                    }
+
+                    writer.WriteLine("\t}");
+                    writer.WriteLine("}");
+                });
+            }
+            PreviousSortingLayerNames = currentSortingLayerNames;
+        }
+        {
+            var currentLayersNames = GetLayersNames();
+            if (PreviousLayersNames == null || !currentLayersNames.SetEquals(PreviousLayersNames)) {
+                GenerateFile(LAYERS_FILE, writer => {
+                    writer.WriteLine("using UnityEngine;");
+                    writer.WriteLine("");
+                    writer.WriteLine("namespace UnityTypeSafe {");
+                    writer.WriteLine("\tpublic static class Layers {");
+
+                    foreach (var layer in currentLayersNames) {
+                        // TODO Proper escaping
+                        // TODO DRY
+                        // TODO Underscore if starts with digit
+                        var escapedName = layer.Replace(" ", "_").ToUpper();
+
+                        writer.WriteLine("\t\t public static LayerMask " + escapedName + " = LayerMask.NameToLayer(\"" +
+                                         layer + "\");");
+                    }
+
+                    writer.WriteLine("\t}");
+                    writer.WriteLine("}");
+                });
+            }
+            PreviousLayersNames = currentLayersNames;
+        }
+        {
+            var currentTags = GetTags();
+            if (PreviousTags == null || !currentTags.SetEquals(PreviousTags)) {
+                GenerateFile(TAGS_FILE, writer => {
+                    writer.WriteLine("using UnityEngine;");
+                    writer.WriteLine("");
+                    writer.WriteLine("namespace UnityTypeSafe {");
+                    writer.WriteLine("\tpublic static class Tags {");
+
+                    foreach (var layer in currentTags) {
+                        // TODO Proper escaping
+                        // TODO DRY escaping
+                        var escapedName = layer.Replace(" ", "_").ToUpper();
+                        writer.WriteLine("\t\t public static string " + escapedName + " = \"" + layer + "\";");
+                    }
+
+                    writer.WriteLine("\t}");
+                    writer.WriteLine("}");
+                });
+            }
+            PreviousTags = currentTags;
+        }
+        {
+            // TODO DRY MORE
+            var current = InputsReflectionReader.GetInputs();
+            if (PreviousInputs == null || !current.SetEquals(PreviousInputs)) {
+                // TODO More typesafety (have different lists for different input types)
+                GenerateFile(INPUTS_FILE, writer => {
+                    writer.WriteLine("using UnityEngine;");
+                    writer.WriteLine("");
+                    writer.WriteLine("namespace UnityTypeSafe {");
+                    writer.WriteLine("\tpublic static class Inputs {");
+
+                    foreach (var input in current) {
+                        // TODO Proper escaping
+                        // TODO DRY
+                        // TODO Underscore if starts with digit
+                        var escapedName = input.Replace(" ", "_").ToUpper();
+
+                        writer.WriteLine("\t\t public static string " + escapedName + " = \"" + input + "\";");
+                    }
+
+                    writer.WriteLine("\t}");
+                    writer.WriteLine("}");
+                });
+            }
+            PreviousInputs = current;
+        }
+    }
+
+    private static void GenerateFile(string filename, Action<StreamWriter> writeFileFunction) {
+        Debug.Log(string.Format("Regenerating {0} file...", filename));
+        File.Delete(filename);
+
+        Directory.CreateDirectory("Assets/UnityTypeSafety");
+        var writer = File.CreateText(filename);
+
+        writeFileFunction(writer);
+
+        writer.Close();
+    }
+
+    private static HashSet<SortingLayer> GetSortingLayerNames() {
+        return new HashSet<SortingLayer>(SortingLayer.layers);
+    }
+
+    private static HashSet<String> GetLayersNames() {
+        return new HashSet<String>(InternalEditorUtility.layers);
+    }
+
+    private static HashSet<String> GetTags() {
+        return new HashSet<String>(InternalEditorUtility.tags);
+    }
+}
+
+#endif
