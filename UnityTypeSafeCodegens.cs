@@ -25,12 +25,14 @@ abstract class UnityTypeSafeCodegen<T> {
     public void Update() {
         var current = GetCurrentList();
         if (previous == null || !previous.SetEquals(current)) {
-            var fullPath = "Assets/UnityTypeSafety/" + Filename + ".cs";
+            var fullPath = UnityTypeSafeCodegens.GENERATION_DIR + Filename + ".cs";
 
             Debug.Log(string.Format("Regenerating {0} file...", fullPath));
-            File.Delete(fullPath);
+            if (File.Exists(fullPath)) {
+                File.Delete(fullPath);
+            }
 
-            Directory.CreateDirectory("Assets/UnityTypeSafety");
+            Directory.CreateDirectory(UnityTypeSafeCodegens.GENERATION_DIR);
             var writer = File.CreateText(fullPath);
 
             WriteFile(writer, current);
@@ -102,10 +104,12 @@ class UnityTypeSafeCodegens {
     // IDEAS:
     // Annotation 'prefab'
 
-    private const String SORTING_LAYER_ENUM_FILE = "Assets/UnityTypeSafety/SortingLayers.cs";
-    private const String LAYERS_FILE = "Assets/UnityTypeSafety/Layers.cs";
-    private const String TAGS_FILE = "Assets/UnityTypeSafety/Tags.cs";
-    private const String INPUTS_FILE = "Assets/UnityTypeSafety/Inputs.cs";
+    public const String GENERATION_DIR = "Assets/UnityTypeSafety-generated/";
+
+    private const String SORTING_LAYER_ENUM_FILE = GENERATION_DIR + "SortingLayers.cs";
+    private const String LAYERS_FILE = GENERATION_DIR + "Layers.cs";
+    private const String TAGS_FILE = GENERATION_DIR + "Tags.cs";
+    private const String INPUTS_FILE = GENERATION_DIR + "Inputs.cs";
 
     private static HashSet<SortingLayer> PreviousSortingLayerNames = null;
     private static HashSet<String> PreviousLayersNames = null;
