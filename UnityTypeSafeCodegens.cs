@@ -76,7 +76,7 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
 
         writer.WriteLine("\tpublic static class ScenesExtension {");
         writer.WriteLine("");
-        writer.WriteLine("\t\tpublic static string Name(this Scenes scene) {");
+        writer.WriteLine("\t\tpublic static string GetName(this Scenes scene) {");
         writer.WriteLine("\t\t\tswitch(scene){");
 
         foreach (var path in list) {
