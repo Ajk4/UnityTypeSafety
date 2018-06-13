@@ -38,6 +38,8 @@ abstract class UnityTypeSafeCodegen<T> {
             WriteFile(writer, current);
 
             writer.Close();
+
+            AssetDatabase.Refresh();
         }
         previous = current;
     }
@@ -146,6 +148,10 @@ class UnityTypeSafeCodegens {
 
     static void Update() {
         ScenesCodegen.Update();
+
+        // TODO dry
+        var refeshAssets = false;
+
         {
             var currentSortingLayerNames = GetSortingLayerNames();
             if (PreviousSortingLayerNames == null || !currentSortingLayerNames.SetEquals(PreviousSortingLayerNames)) {
@@ -167,6 +173,7 @@ class UnityTypeSafeCodegens {
                     writer.WriteLine("\t}");
                     writer.WriteLine("}");
                 });
+                refeshAssets = true;
             }
             PreviousSortingLayerNames = currentSortingLayerNames;
         }
@@ -191,6 +198,8 @@ class UnityTypeSafeCodegens {
 
                     writer.WriteLine("\t}");
                     writer.WriteLine("}");
+
+                    refeshAssets = true;
                 });
             }
             PreviousLayersNames = currentLayersNames;
@@ -213,6 +222,8 @@ class UnityTypeSafeCodegens {
 
                     writer.WriteLine("\t}");
                     writer.WriteLine("}");
+
+                    refeshAssets = true;
                 });
             }
             PreviousTags = currentTags;
@@ -239,9 +250,15 @@ class UnityTypeSafeCodegens {
 
                     writer.WriteLine("\t}");
                     writer.WriteLine("}");
+
+                    refeshAssets = true;
                 });
             }
             PreviousInputs = current;
+        }
+
+        if (refeshAssets) {
+            AssetDatabase.Refresh();
         }
     }
 
