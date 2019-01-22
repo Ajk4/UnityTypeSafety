@@ -52,7 +52,7 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
     }
 
     protected override HashSet<string> GetCurrentList() {
-        return new HashSet<string>(EditorBuildSettings.scenes.Select(scene => scene.path));
+        return new HashSet<string>(EditorBuildSettings.scenes.Select(scene => scene.path).Where(p => p != null && p.Length > 0));
     }
 
     // TODO Uzyc enuma, by property dzialalo!
