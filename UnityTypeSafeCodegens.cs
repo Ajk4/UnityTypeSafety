@@ -4,11 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityTypeSafe;
 
 using UnityEditor;
+using UnityEditor.UI;
 using UnityEditorInternal;
 
 abstract class UnityTypeSafeCodegen<T> {
@@ -119,10 +121,16 @@ class UnityTypeSafeCodegens {
     private static HashSet<String> PreviousInputs = null;
 
     private static readonly ScenesUnityTypeSafeCodegen ScenesCodegen = new ScenesUnityTypeSafeCodegen();
+    private static Action DebouncedRefreshAssets;
 
     static UnityTypeSafeCodegens() {
+        Debug.Log("LOADED UNITY TYPE SAVE VERSION 0.05"); // remove it eventually
+        
+        DebouncedRefreshAssets = Debounce(() => {
+            Debug.Log("UnityTypeSafe::Observed changes. Reloading assets");
+            AssetDatabase.Refresh();
+        });
         EditorApplication.update += Update;
-        Update();
     }
 
     [MenuItem("Tools/UnityTypeSafe/Force refresh")]
@@ -146,12 +154,11 @@ class UnityTypeSafeCodegens {
     }
     */
 
-    static void Update() {
+    private static void Update() {
         ScenesCodegen.Update();
 
         // TODO dry
         var refeshAssets = false;
-
         {
             var currentSortingLayerNames = GetSortingLayerNames();
             if (PreviousSortingLayerNames == null || !currentSortingLayerNames.SetEquals(PreviousSortingLayerNames)) {
@@ -258,12 +265,12 @@ class UnityTypeSafeCodegens {
         }
 
         if (refeshAssets) {
-            AssetDatabase.Refresh();
+            DebouncedRefreshAssets();
         }
     }
 
     private static void GenerateFile(string filename, Action<StreamWriter> writeFileFunction) {
-        Debug.Log(string.Format("Regenerating {0} file...", filename));
+        // Debug.Log(string.Format("Regenerating {0} file...", filename));
         File.Delete(filename);
 
         Directory.CreateDirectory("Assets/UnityTypeSafety");
@@ -285,6 +292,24 @@ class UnityTypeSafeCodegens {
     private static HashSet<String> GetTags() {
         return new HashSet<String>(InternalEditorUtility.tags);
     }
+    
+    // Move somewhere
+    public static Action Debounce(Action func, int milliseconds = 300)
+    {
+        var last = 0;
+        return () =>
+        {
+            var current = Interlocked.Increment(ref last);
+            Task.Delay(milliseconds).ContinueWith(task =>
+            {
+                if (current == last) {
+                    func();
+                }
+                task.Dispose();
+            });
+        };
+    }
+    
 }
 
 #endif
