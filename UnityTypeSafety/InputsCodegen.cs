@@ -2,6 +2,7 @@
 using System.IO;
 using UnityTypeSafe;
 
+namespace UnityTypeSafety {
 class InputsUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
     // TODO Enrich input data with informations like input type
 
@@ -29,4 +30,5 @@ class InputsUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
         writer.WriteLine("\t}");
         writer.WriteLine("}");
     }
+}
 }

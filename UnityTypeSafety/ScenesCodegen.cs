@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 
+namespace UnityTypeSafety {
 class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
     protected override string Filename => "Scenes";
 
@@ -56,4 +57,5 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
 
         writer.WriteLine("}");
     }
+}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditorInternal;
 
+namespace UnityTypeSafety {
 class LayersUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
     protected override string Filename => "Layers";
 
@@ -29,4 +30,5 @@ class LayersUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
         writer.WriteLine("\t}");
         writer.WriteLine("}");
     }
+}
 }

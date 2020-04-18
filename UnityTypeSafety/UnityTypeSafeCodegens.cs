@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 
+namespace UnityTypeSafety {
 abstract class UnityTypeSafeCodegen<T> {
     protected abstract string Filename { get; }
     protected abstract HashSet<T> GetCurrentElements();
@@ -59,7 +60,7 @@ class UnityTypeSafeCodegens {
     private static readonly InputsUnityTypeSafeCodegen InputsCodegen = new InputsUnityTypeSafeCodegen();
 
     static UnityTypeSafeCodegens() {
-        Debug.Log("LOADED UNITY TYPE SAVE VERSION 0.1.11"); // remove it eventually
+        Debug.Log("LOADED UNITY TYPE SAVE VERSION 0.1.12"); // remove it eventually
         EditorApplication.update += Update;
     }
 
@@ -70,4 +71,5 @@ class UnityTypeSafeCodegens {
         TagsCodegen.Update();
         InputsCodegen.Update();
     }
+}
 }

@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using UnityEngine;
 
+namespace UnityTypeSafety {
 class SortingLayersUnityTypeSafeCodegen : UnityTypeSafeCodegen<SortingLayer> {
     protected override string Filename => "SortingLayers";
 
@@ -33,4 +34,5 @@ class SortingLayersUnityTypeSafeCodegen : UnityTypeSafeCodegen<SortingLayer> {
         writer.WriteLine("\t}");
         writer.WriteLine("}");
     }
+}
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEditorInternal;
 
+namespace UnityTypeSafety {
 class TagsUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
     protected override string Filename => "Tags";
 
@@ -26,4 +27,5 @@ class TagsUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
         writer.WriteLine("\t}");
         writer.WriteLine("}");
     }
+}
 }
