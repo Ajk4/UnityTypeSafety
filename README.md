@@ -15,6 +15,6 @@ have this:
 
 # Usage
 
-- Clone to your $REPO/Assets dir.
-- Static classes will get generated. After any changes in Unity static files will get regererated.
-- Don't .gitignore UnityTypeSafety-generated. Commit generated code to avoid cold-start problem with compilation errors on fresh checkouts. 
+1. Clone to your $REPO/Assets dir.
+2. Static classes will get generated. After any changes in Unity static files will get regenerated.
+3. Don't .gitignore UnityTypeSafety-generated. Commit generated code to avoid cold-start problem with compilation errors on fresh checkouts. 
