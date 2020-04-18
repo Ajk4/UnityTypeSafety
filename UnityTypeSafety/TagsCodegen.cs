@@ -1,9 +1,9 @@
-﻿﻿using System;
- using System.Collections.Generic;
- using System.IO;
- using UnityEditorInternal;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEditorInternal;
 
- class TagsUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
+class TagsUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
     protected override string Filename => "Tags";
 
     protected override HashSet<string> GetCurrentElements() {
@@ -15,14 +15,14 @@
         writer.WriteLine("");
         writer.WriteLine("namespace UnityTypeSafety {");
         writer.WriteLine("\tpublic static class Tags {");
-        
+
         foreach (var layer in elements) {
             // TODO Proper escaping
             // TODO DRY escaping
             var escapedName = layer.Replace(" ", "_").ToUpper();
             writer.WriteLine("\t\t public static string " + escapedName + " = \"" + layer + "\";");
         }
-        
+
         writer.WriteLine("\t}");
         writer.WriteLine("}");
     }

@@ -1,9 +1,9 @@
-﻿﻿using System;
- using System.Collections.Generic;
- using System.IO;
- using UnityEditorInternal;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using UnityEditorInternal;
 
- class LayersUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
+class LayersUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
     protected override string Filename => "Layers";
 
     protected override HashSet<string> GetCurrentElements() {

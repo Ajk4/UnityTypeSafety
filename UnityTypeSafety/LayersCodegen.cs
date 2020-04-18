@@ -1,9 +1,9 @@
-﻿﻿using System.Collections.Generic;
- using System.IO;
- using System.Linq;
- using UnityEngine;
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using UnityEngine;
 
- class SortingLayersUnityTypeSafeCodegen : UnityTypeSafeCodegen<SortingLayer> {
+class SortingLayersUnityTypeSafeCodegen : UnityTypeSafeCodegen<SortingLayer> {
     protected override string Filename => "SortingLayers";
 
     protected override HashSet<SortingLayer> GetCurrentElements() {
@@ -21,7 +21,7 @@
         writer.WriteLine("");
         writer.WriteLine("namespace UnityTypeSafety {");
         writer.WriteLine("\tpublic static class SortingLayers {");
-        
+
         foreach (var layer in elements) {
             // TODO Proper escaping
             // TODO DRY escaping
@@ -29,7 +29,7 @@
             writer.WriteLine("\t\t public static SortingLayer " + escapedName +
                              " = SortingLayer.layers.First(l => l.name == \"" + layer.name + "\");");
         }
-        
+
         writer.WriteLine("\t}");
         writer.WriteLine("}");
     }

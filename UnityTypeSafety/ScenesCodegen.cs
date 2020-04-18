@@ -1,4 +1,4 @@
-﻿﻿using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
@@ -7,7 +7,8 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
     protected override string Filename => "Scenes";
 
     protected override HashSet<string> GetCurrentElements() {
-        return new HashSet<string>(EditorBuildSettings.scenes.Select(scene => scene.path).Where(p => p != null && p.Length > 0));
+        return new HashSet<string>(EditorBuildSettings.scenes.Select(scene => scene.path)
+            .Where(p => p != null && p.Length > 0));
     }
 
     protected override void WriteFile(StreamWriter writer, HashSet<string> elements) {
@@ -28,6 +29,7 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
             // public static Scene DEFAULT = new Scene("default");
             writer.WriteLine("\t\t " + escapedName + ",");
         }
+
         writer.WriteLine("\t}");
 
         writer.WriteLine("\tpublic static class ScenesExtension {");
@@ -44,6 +46,7 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
             writer.WriteLine("\t\t\t\tcase Scenes." + escapedName + ":");
             writer.WriteLine("\t\t\t\t\treturn \"" + sceneName + "\";");
         }
+
         writer.WriteLine("\t\t\t\tdefault:");
         writer.WriteLine("\t\t\t\t\tthrow new Exception(\"Uknown \" + scene);");
 
