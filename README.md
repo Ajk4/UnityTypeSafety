@@ -1,2 +1,20 @@
-﻿Commit code in UnityTypeSafety-generated directory - it avoid cyclic dependencies on fresh checkout.
-Currently codegen run after code is compiled (and it won't compile if there are unresolved references to generated codes)
+﻿## Unity3D - static C# code generator for Tags, Layers, SortingLayers, Inputs and Scenes
+No more stringly-typed code!
+
+* Don't like runtime error because of changed string with layer names?
+* Would you like to safely change names of you layers/sorting_layers/inputs/tags without breaking code?
+* Do you prefer compile-time errors instead of run-time errors?
+
+Instead of this:
+
+![stringly-typed](stringly_typed.png)
+
+have this:
+
+![Demo gif](demo.gif)
+
+# Usage
+
+- Clone to your $REPO/Assets dir.
+- Static classes will get generated. After any changes in Unity static files will get regererated.
+- Don't .gitignore UnityTypeSafety-generated. Commit generated code to avoid cold-start problem with compilation errors on fresh checkouts. 
