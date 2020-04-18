@@ -1,31 +1,30 @@
-﻿#if UNITY_EDITOR
+﻿﻿using System;
+ using System.Collections.Generic;
+ using System.IO;
+ using UnityEditor;
+ using UnityEngine;
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using UnityEngine;
-using UnityTypeSafe;
-
-using UnityEditor;
-using UnityEditor.UI;
-using UnityEditorInternal;
-
-abstract class UnityTypeSafeCodegen<T> {
+ abstract class UnityTypeSafeCodegen<T> {
     protected abstract string Filename { get; }
-    protected abstract HashSet<T> GetCurrentList();
-    private HashSet<T> previous = null;
-    protected abstract void WriteFile(StreamWriter writer, HashSet<T> list);
+    protected abstract HashSet<T> GetCurrentElements();
 
-    public void ForceRefresh() {
-        previous = null;
-        Update();
+    protected virtual int GetConsistentHashCode(HashSet<T> elements) {
+        return HashSet<T>.CreateSetComparer().GetHashCode(elements);
     }
+    
+    private int previousHashCode = 0;
+    protected abstract void WriteFile(StreamWriter writer, HashSet<T> elements);
 
     public void Update() {
-        var current = GetCurrentList();
-        if (previous == null || !previous.SetEquals(current)) {
+        var prefsKey = $"UnityTypeSafety.{Filename}";
+        
+        var current = GetCurrentElements();
+        
+        var currentHash = GetConsistentHashCode(current);
+        if (currentHash != previousHashCode) {  // in case class was reloaded and static data was cleared
+            previousHashCode = EditorPrefs.GetInt(prefsKey, 0);
+        }
+        if (currentHash != previousHashCode) {
             var fullPath = UnityTypeSafeCodegens.GENERATION_DIR + Filename + ".cs";
 
             Debug.Log(string.Format("Regenerating {0} file...", fullPath));
@@ -37,224 +36,36 @@ abstract class UnityTypeSafeCodegen<T> {
             var writer = File.CreateText(fullPath);
 
             WriteFile(writer, current);
-
             writer.Close();
-
-            AssetDatabase.Refresh();
+            AssetDatabase.ImportAsset(fullPath);
+            previousHashCode = currentHash;
+            EditorPrefs.SetInt(prefsKey, currentHash);
         }
-        previous = current;
+        
     }
 }
-
-// TODO Refactor other codegens
 
 [InitializeOnLoad]
 class UnityTypeSafeCodegens {
-    // IDEAS:
-    // Annotation 'prefab'
-
     public const String GENERATION_DIR = "Assets/UnityTypeSafety-generated/";
 
-    private const String SORTING_LAYER_ENUM_FILE = GENERATION_DIR + "SortingLayers.cs";
-    private const String LAYERS_FILE = GENERATION_DIR + "Layers.cs";
-    private const String TAGS_FILE = GENERATION_DIR + "Tags.cs";
-    private const String INPUTS_FILE = GENERATION_DIR + "Inputs.cs";
-
-    private static HashSet<SortingLayer> PreviousSortingLayerNames = null;
-    private static HashSet<String> PreviousLayersNames = null;
-    private static HashSet<String> PreviousTags = null;
-    private static HashSet<String> PreviousInputs = null;
-
     private static readonly ScenesUnityTypeSafeCodegen ScenesCodegen = new ScenesUnityTypeSafeCodegen();
-    private static Action DebouncedRefreshAssets;
+    private static readonly LayersUnityTypeSafeCodegen LayersCodegen = new LayersUnityTypeSafeCodegen();
+    private static readonly SortingLayersUnityTypeSafeCodegen SortingLayersCodegen = new SortingLayersUnityTypeSafeCodegen();
+    private static readonly TagsUnityTypeSafeCodegen TagsCodegen = new TagsUnityTypeSafeCodegen();
+    private static readonly InputsUnityTypeSafeCodegen InputsCodegen = new InputsUnityTypeSafeCodegen();
 
     static UnityTypeSafeCodegens() {
-        Debug.Log("LOADED UNITY TYPE SAVE VERSION 0.05"); // remove it eventually
-        
-        DebouncedRefreshAssets = Debounce(() => {
-            Debug.Log("UnityTypeSafe::Observed changes. Reloading assets");
-            AssetDatabase.Refresh();
-        });
+        Debug.Log("LOADED UNITY TYPE SAVE VERSION 0.1.11"); // remove it eventually
         EditorApplication.update += Update;
     }
 
-    [MenuItem("Tools/UnityTypeSafe/Force refresh")]
-    static void ForceRefresh() {
-        File.Delete(SORTING_LAYER_ENUM_FILE);
-        PreviousSortingLayerNames = null;
-        File.Delete(LAYERS_FILE);
-        PreviousLayersNames = null;
-        File.Delete(TAGS_FILE);
-        PreviousLayersNames = null;
-        File.Delete(INPUTS_FILE);
-        PreviousInputs = null;
-        Update();
-        ScenesCodegen.ForceRefresh();
-    }
-
-    /*
-    [MenuItem("Tools/UnityTypeSafe/Test")]
-    static void TestScene() {
-        ScenesCodegen.Update();
-    }
-    */
-
     private static void Update() {
         ScenesCodegen.Update();
-
-        // TODO dry
-        var refeshAssets = false;
-        {
-            var currentSortingLayerNames = GetSortingLayerNames();
-            if (PreviousSortingLayerNames == null || !currentSortingLayerNames.SetEquals(PreviousSortingLayerNames)) {
-                GenerateFile(SORTING_LAYER_ENUM_FILE, writer => {
-                    writer.WriteLine("using UnityEngine;");
-                    writer.WriteLine("using System.Linq;");
-                    writer.WriteLine("");
-                    writer.WriteLine("namespace UnityTypeSafety {");
-                    writer.WriteLine("\tpublic static class SortingLayers {");
-
-                    foreach (var layer in currentSortingLayerNames) {
-                        // TODO Proper escaping
-                        // TODO DRY escaping
-                        var escapedName = layer.name.Replace(" ", "_").ToUpper();
-                        writer.WriteLine("\t\t public static SortingLayer " + escapedName +
-                                         " = SortingLayer.layers.First(l => l.name == \"" + layer.name + "\");");
-                    }
-
-                    writer.WriteLine("\t}");
-                    writer.WriteLine("}");
-                });
-                refeshAssets = true;
-            }
-            PreviousSortingLayerNames = currentSortingLayerNames;
-        }
-        {
-            var currentLayersNames = GetLayersNames();
-            if (PreviousLayersNames == null || !currentLayersNames.SetEquals(PreviousLayersNames)) {
-                GenerateFile(LAYERS_FILE, writer => {
-                    writer.WriteLine("using UnityEngine;");
-                    writer.WriteLine("");
-                    writer.WriteLine("namespace UnityTypeSafety {");
-                    writer.WriteLine("\tpublic static class Layers {");
-
-                    foreach (var layer in currentLayersNames) {
-                        // TODO Proper escaping
-                        // TODO DRY
-                        // TODO Underscore if starts with digit
-                        var escapedName = layer.Replace(" ", "_").ToUpper();
-
-                        writer.WriteLine("\t\t public static LayerMask " + escapedName + " = LayerMask.NameToLayer(\"" +
-                                         layer + "\");");
-                    }
-
-                    writer.WriteLine("\t}");
-                    writer.WriteLine("}");
-
-                    refeshAssets = true;
-                });
-            }
-            PreviousLayersNames = currentLayersNames;
-        }
-        {
-            var currentTags = GetTags();
-            if (PreviousTags == null || !currentTags.SetEquals(PreviousTags)) {
-                GenerateFile(TAGS_FILE, writer => {
-                    writer.WriteLine("using UnityEngine;");
-                    writer.WriteLine("");
-                    writer.WriteLine("namespace UnityTypeSafety {");
-                    writer.WriteLine("\tpublic static class Tags {");
-
-                    foreach (var layer in currentTags) {
-                        // TODO Proper escaping
-                        // TODO DRY escaping
-                        var escapedName = layer.Replace(" ", "_").ToUpper();
-                        writer.WriteLine("\t\t public static string " + escapedName + " = \"" + layer + "\";");
-                    }
-
-                    writer.WriteLine("\t}");
-                    writer.WriteLine("}");
-
-                    refeshAssets = true;
-                });
-            }
-            PreviousTags = currentTags;
-        }
-        {
-            // TODO DRY MORE
-            var current = InputsReflectionReader.GetInputs();
-            if (PreviousInputs == null || !current.SetEquals(PreviousInputs)) {
-                // TODO More typesafety (have different lists for different input types)
-                GenerateFile(INPUTS_FILE, writer => {
-                    writer.WriteLine("using UnityEngine;");
-                    writer.WriteLine("");
-                    writer.WriteLine("namespace UnityTypeSafety {");
-                    writer.WriteLine("\tpublic static class Inputs {");
-
-                    foreach (var input in current) {
-                        // TODO Proper escaping
-                        // TODO DRY
-                        // TODO Underscore if starts with digit
-                        var escapedName = input.Replace(" ", "_").ToUpper();
-
-                        writer.WriteLine("\t\t public static string " + escapedName + " = \"" + input + "\";");
-                    }
-
-                    writer.WriteLine("\t}");
-                    writer.WriteLine("}");
-
-                    refeshAssets = true;
-                });
-            }
-            PreviousInputs = current;
-        }
-
-        if (refeshAssets) {
-            DebouncedRefreshAssets();
-        }
+        LayersCodegen.Update();
+        SortingLayersCodegen.Update();
+        TagsCodegen.Update();
+        InputsCodegen.Update();
     }
 
-    private static void GenerateFile(string filename, Action<StreamWriter> writeFileFunction) {
-        // Debug.Log(string.Format("Regenerating {0} file...", filename));
-        File.Delete(filename);
-
-        Directory.CreateDirectory("Assets/UnityTypeSafety");
-        var writer = File.CreateText(filename);
-
-        writeFileFunction(writer);
-
-        writer.Close();
-    }
-
-    private static HashSet<SortingLayer> GetSortingLayerNames() {
-        return new HashSet<SortingLayer>(SortingLayer.layers);
-    }
-
-    private static HashSet<String> GetLayersNames() {
-        return new HashSet<String>(InternalEditorUtility.layers);
-    }
-
-    private static HashSet<String> GetTags() {
-        return new HashSet<String>(InternalEditorUtility.tags);
-    }
-    
-    // Move somewhere
-    public static Action Debounce(Action func, int milliseconds = 300)
-    {
-        var last = 0;
-        return () =>
-        {
-            var current = Interlocked.Increment(ref last);
-            Task.Delay(milliseconds).ContinueWith(task =>
-            {
-                if (current == last) {
-                    func();
-                }
-                task.Dispose();
-            });
-        };
-    }
-    
 }
-
-#endif

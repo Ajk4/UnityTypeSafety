@@ -1,2 +1,2 @@
-Commit code in UnityTypeSafety-generated directory - it avoid cyclic dependencies on fresh checkout.
+﻿Commit code in UnityTypeSafety-generated directory - it avoid cyclic dependencies on fresh checkout.
 Currently codegen run after code is compiled (and it won't compile if there are unresolved references to generated codes)

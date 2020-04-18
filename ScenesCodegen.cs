@@ -1,18 +1,16 @@
-﻿using System.Collections.Generic;
+﻿﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEditor;
 
 class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
-    protected override string Filename {
-        get { return "Scenes"; }
-    }
+    protected override string Filename => "Scenes";
 
-    protected override HashSet<string> GetCurrentList() {
+    protected override HashSet<string> GetCurrentElements() {
         return new HashSet<string>(EditorBuildSettings.scenes.Select(scene => scene.path).Where(p => p != null && p.Length > 0));
     }
 
-    protected override void WriteFile(StreamWriter writer, HashSet<string> list) {
+    protected override void WriteFile(StreamWriter writer, HashSet<string> elements) {
         writer.WriteLine("using UnityEngine;");
         writer.WriteLine("using System.Linq;");
         writer.WriteLine("using System;");
@@ -21,7 +19,7 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
 
         writer.WriteLine("\tpublic enum Scenes {");
         // TODO Not available scene names here. Only in runtime? Have only build index here?
-        foreach (var path in list) {
+        foreach (var path in elements) {
             // This should be in getter?
             var sceneName = Path.GetFileNameWithoutExtension(path);
             // TODO Proper escaping
@@ -37,7 +35,7 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
         writer.WriteLine("\t\tpublic static string GetName(this Scenes scene) {");
         writer.WriteLine("\t\t\tswitch(scene){");
 
-        foreach (var path in list) {
+        foreach (var path in elements) {
             // This should be in getter?
             var sceneName = Path.GetFileNameWithoutExtension(path);
             // TODO Proper escaping
