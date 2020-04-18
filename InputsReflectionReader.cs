@@ -16,20 +16,12 @@ namespace UnityTypeSafe {
 
             var output = new HashSet<string>();
 
-//            if (axisArray.arraySize == 0)
-//                Debug.Log("No Axes");
-
             for (int i = 0; i < axisArray.arraySize; ++i) {
                 var axis = axisArray.GetArrayElementAtIndex(i);
 
                 var name = axis.FindPropertyRelative("m_Name").stringValue;
                 var axisVal = axis.FindPropertyRelative("axis").intValue;
                 var inputType = (InputType) axis.FindPropertyRelative("type").intValue;
-
-                // TODO Without log it doesnt work??
-//                Debug.Log(name);
-//                Debug.Log(axisVal);
-//                Debug.Log(inputType);
 
                 output.Add(name);
             }

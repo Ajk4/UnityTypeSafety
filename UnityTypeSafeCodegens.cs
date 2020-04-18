@@ -57,7 +57,6 @@ class ScenesUnityTypeSafeCodegen : UnityTypeSafeCodegen<string> {
         return new HashSet<string>(EditorBuildSettings.scenes.Select(scene => scene.path).Where(p => p != null && p.Length > 0));
     }
 
-    // TODO Uzyc enuma, by property dzialalo!
     protected override void WriteFile(StreamWriter writer, HashSet<string> list) {
         writer.WriteLine("using UnityEngine;");
         writer.WriteLine("using System.Linq;");
