@@ -60,7 +60,6 @@ class UnityTypeSafeCodegens {
     private static readonly InputsUnityTypeSafeCodegen InputsCodegen = new InputsUnityTypeSafeCodegen();
 
     static UnityTypeSafeCodegens() {
-        Debug.Log("LOADED UNITY TYPE SAVE VERSION 0.1.12"); // remove it eventually
         EditorApplication.update += Update;
     }
 
